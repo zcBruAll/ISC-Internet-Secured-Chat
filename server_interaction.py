@@ -49,7 +49,7 @@ def _decode_message(text):
     :param text: The raw message received from the server (bytes).
     :return: The decoded string without padding.
     """
-    return text[6:].decode("utf-8", errors="ignore").replace("\x00", "")        # Skip the first 6 bytes (ISC header + type + length)
+    return text.decode("utf-8", errors="ignore").replace("\x00", "")            # Skip the first 6 bytes (ISC header + type + length)
 
 # ==========================================================
 #               SERVER CONNECTION MANAGEMENT
@@ -102,13 +102,22 @@ def handle_message_reception():
     """
     while True:
         try:
-            # Receive up to 65536 bytes of data from the server
-            data = connection.recv(65536)
+            # Receive 'ISC' and don't care of it
+            connection.recv(3)
+
+            # Receive the type of the message
+            type = connection.recv(1).decode("utf-8", errors="ignore")
+
+            # Receive the length of the message
+            msgLength = int.from_bytes(connection.recv(2), byteorder='big') * 4
+
+            # Receive the message
+            data = connection.recv(msgLength)
         except ConnectionAbortedError:
             print("[ServerInteraction] Connection aborted")
             exit(1)                                         # If the connection is aborted, exit the thread
 
-        type = data.decode("utf-8", errors="ignore")[3]
+        
         decoded_data = _decode_message(data)                # Decode received data
 
         global last_own_sent_message
