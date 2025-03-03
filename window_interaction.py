@@ -50,6 +50,9 @@ def load_window():
             if message.text().__contains__("shift"):
                 crypto_interaction.isShifting = True
                 crypto_interaction.server_msg.clear()
+            elif message.text().__contains__("vigenere"):
+                crypto_interaction.isVigenering = True
+                crypto_interaction.server_msg.clear()
             
             if message.text().__contains__("encode"):
                 crypto_interaction.isEncoding = True

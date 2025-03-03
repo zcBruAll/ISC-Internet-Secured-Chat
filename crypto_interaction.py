@@ -2,6 +2,7 @@ import window_interaction
 import server_interaction
 
 isShifting = False
+isVigenering = True
 isEncoding = False
 server_msg = list[str]()
 
@@ -12,6 +13,7 @@ def appendServerMsg(msg: str):
     :params msg: The decoded message of the server
     """
     global isShifting
+    global isVigenering
     global isEncoding
 
     server_msg.append(msg)
@@ -24,6 +26,13 @@ def appendServerMsg(msg: str):
         isShifting = False      # Reset the task, it should be done
         isEncoding = False      # Reset the task, it should be done
         server_msg.clear()      # Reset the server messages
+
+    if isVigenering == True and len(server_msg) == 2:
+        if (isEncoding):
+            server_interaction.send_message("s", encode_vigenere(server_msg[1], server_msg[0].split(" ")[-1]))
+        isVigenering = False
+        isEncoding = False
+        server_msg.clear()
 
 # Encode the message with shift
 def encode_shift(message, shift):
@@ -59,6 +68,17 @@ def decode_shift(message, shift):
 
     return result
 
+def encode_vigenere(message, key):
+    result = ""
+
+    for i, c in enumerate(message):
+        intChar = int.from_bytes(c.encode())
+        intKey = int.from_bytes(key[i % len(key)].encode())
+        
+        result += chr(intChar+intKey)
+
+    return result
+
 # Execute the crypto commands
 def crypto(command: list[str]):
     """
@@ -80,6 +100,9 @@ def crypto(command: list[str]):
                 # Concatenate the command message contained in the third to the last-1 cell
                 # Retrieve the shift key in the last cell of the command
                 result = decode_shift(" ".join(command[2:-1]), int(command[-1]))
+        case "vigenere":
+            if isEncode:
+                result = encode_vigenere(" ".join(command[2:-1]), command[-1])
 
     window_interaction.add_message("<Crypto> " + " ".join(command))
     window_interaction.add_message("<Crypto> " + result)
