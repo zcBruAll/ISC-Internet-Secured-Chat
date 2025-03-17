@@ -1,6 +1,7 @@
 import server_interaction
 import window_interaction
 import crypto_interaction
+import window
 import threading
 
 if __name__ == '__main__': 
@@ -10,7 +11,8 @@ if __name__ == '__main__':
         s.start()
 
         print("Starting window...")
-        window_interaction.load_window()  # Execute in the main thread
+        # window_interaction.load_window()  # Execute in the main thread
+        window.load_window()
 
     except Exception as e:
         print(f"Error : {e}")
