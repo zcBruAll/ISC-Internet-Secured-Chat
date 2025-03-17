@@ -24,7 +24,7 @@ last_own_sent_message = ""  # Stores the last message sent by the user
 #               MESSAGE ENCODING & DECODING
 # ==========================================================
 
-def _str_encode(type, string):
+def _str_encode(type, msg):
     """
     Encodes a message to send to the server in ISC format.
 
@@ -32,15 +32,25 @@ def _str_encode(type, string):
     :param string: The message content to encode.
     :return: The encoded byte sequence.
     """
+
+    lengthMsg = 0
+    if isinstance(msg, str):
+        lengthMsg = len(msg)
+    else:
+        lengthMsg = len(msg) / 4
+
     # ISC Header + message type + message length encoded in big-endian format
-    msg = b'ISC' + type.encode('utf-8') + len(string).to_bytes(2, byteorder='big')
+    message = b'ISC' + type.encode('utf-8') + int(lengthMsg).to_bytes(2, byteorder='big')
 
-    # Encode characters as Unicode (up to 4 bytes per character)
-    for s in string:
-        encoded = s.encode('utf-8')
-        msg += (4 - len(encoded)) * b'\x00' + encoded   # Pad with null bytes if needed
+    if isinstance(msg, str):
+        # Encode characters as Unicode (up to 4 bytes per character)
+        for s in msg:
+            encoded = s.encode('utf-8')
+            message += (4 - len(encoded)) * b'\x00' + encoded   # Pad with null bytes if needed
+    else:
+        message += msg
 
-    return msg
+    return message
 
 def _decode_message(text):
     """
@@ -145,9 +155,16 @@ def send_message(type, text):
     """
     global last_own_sent_message
     if len(text) != 0 and ["t", "s", "b"].count(type) == 1 :
-        connection.send(_str_encode(type, text))            # Send encoded message to server
-        window_interaction.add_message("<You> " + text)     # Display message in UI
-        last_own_sent_message = text                        # Store last sent message to avoid duplication
+        connection.send(_str_encode(type, text))                # Send encoded message to server
+
+        text_to_add = ""
+        if isinstance(text, bytearray):
+            text_to_add += bytes(b for b in text if b != 0).decode('utf-8', 'replace')
+        else:
+            text_to_add = text
+
+        window_interaction.add_message("<You> " + text_to_add)  # Display message in UI
+        last_own_sent_message = text                            # Store last sent message to avoid duplication
 
 # ==========================================================
 #               SERVER COMMAND HANDLING

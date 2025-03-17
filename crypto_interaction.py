@@ -2,8 +2,11 @@ import window_interaction
 import server_interaction
 
 isShifting = False
-isVigenering = True
+isVigenering = False
+isRSAing = False
+
 isEncoding = False
+
 server_msg = list[str]()
 
 def appendServerMsg(msg: str):
@@ -14,6 +17,8 @@ def appendServerMsg(msg: str):
     """
     global isShifting
     global isVigenering
+    global isRSAing
+
     global isEncoding
 
     server_msg.append(msg)
@@ -34,6 +39,13 @@ def appendServerMsg(msg: str):
         isEncoding = False
         server_msg.clear()
 
+    if isRSAing == True and len(server_msg) == 2:
+        if (isEncoding):
+            server_interaction.send_message("s", encode_rsa(server_msg[1], server_msg[0].split(", e=")[0].split("n=")[-1], server_msg[0].split(", e=")[-1]))
+        isRSAing = False
+        isEncoding = False
+        server_msg.clear()
+
 # Encode the message with shift
 def encode_shift(message, shift):
     """
@@ -42,12 +54,12 @@ def encode_shift(message, shift):
     :params message: The message to encode 
     :params shift: The `int` shift key to use
     """
-    result = ""
+    result = bytearray()
     for c in message:
         # For every character in the message, 
         # sum the shift key with the unicode code 
         # and join it to the result as a string
-        result += chr(ord(c) + shift)
+        result.extend(int.to_bytes(int.from_bytes(c.encode()) + shift, 4))
     
     return result
 
@@ -59,23 +71,37 @@ def decode_shift(message, shift):
     :params message: The message to decode 
     :params shift: The `int` shift key to use
     """
-    result = ""
+    result = bytearray()
     for c in message:
         # For every character in the message, 
         # subsctract the unicode code with the shift key 
         # and join it to the result as a string
-        result += chr(ord(c) - shift)
+        result.extend(int.to_bytes(int.from_bytes(c.encode()) - shift, 4))
 
     return result
 
 def encode_vigenere(message, key):
-    result = ""
+    result = bytearray()
 
     for i, c in enumerate(message):
         intChar = int.from_bytes(c.encode())
         intKey = int.from_bytes(key[i % len(key)].encode())
         
-        result += chr(intChar+intKey)
+        result.extend(int.to_bytes((intChar+intKey), 4))
+
+    return result
+
+def encode_rsa(message, key_n, key_e):
+    result = bytearray()
+
+    for c in message:
+        result.extend(
+            int.to_bytes(
+                # Compute : c^e mod n
+                pow(int.from_bytes(c.encode()), int(key_e), int(key_n))
+                , 4
+            )
+        )
 
     return result
 
@@ -87,7 +113,7 @@ def crypto(command: list[str]):
     :params command: text commands splitted by spaces without the first cell
     """
 
-    result = ""
+    result = bytearray()
     # Reitreve if the operation is to encode or decode
     isEncode = command[1] == "encode"
     match command[0]:
@@ -103,6 +129,13 @@ def crypto(command: list[str]):
         case "vigenere":
             if isEncode:
                 result = encode_vigenere(" ".join(command[2:-1]), command[-1])
+        case "RSA":
+            if isEncode:
+                result = encode_rsa(" ".join(command[2:-1]), command[-1])
 
     window_interaction.add_message("<Crypto> " + " ".join(command))
-    window_interaction.add_message("<Crypto> " + result)
+
+    text = ""
+    text += bytes(b for b in result if b != 0).decode('utf-8', 'replace')
+
+    window_interaction.add_message("<Crypto> " + text)

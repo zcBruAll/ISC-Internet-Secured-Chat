@@ -15,6 +15,7 @@ def load_window():
     Initializes and displays the chat window.
     Handles user message input and manages server connection.
     """
+    
     app = QApplication([])  # Initialize the PyQt6 application
     app.setApplicationDisplayName("ISC - Internet Secured Chat")
     app.setWindowIcon(QIcon("ISC-logo.png"))
@@ -38,6 +39,7 @@ def load_window():
     window.setLayout(layout)
     window.setMinimumSize(500, 350)
     window.show()                   # Display the window
+    
 
     def send_message():
         """
@@ -52,6 +54,9 @@ def load_window():
                 crypto_interaction.server_msg.clear()
             elif message.text().__contains__("vigenere"):
                 crypto_interaction.isVigenering = True
+                crypto_interaction.server_msg.clear()
+            elif message.text().__contains__("RSA"):
+                crypto_interaction.isRSAing = True
                 crypto_interaction.server_msg.clear()
             
             if message.text().__contains__("encode"):
