@@ -1,7 +1,7 @@
 # Import necessary modules
 import socket                       # For network communication
 import threading                    # For handling concurrent tasks
-import window_interaction           # Custom module to interact with the UI
+import window                       # Custom module to interact with the UI
 import crypto_interaction           # Custom module to interact with the crypto tools
 
 # Server details
@@ -136,7 +136,7 @@ def handle_message_reception():
             if type == "t":
                 last_own_sent_message = ""                  # Reset last sent message tracking
             
-            window_interaction.add_message(
+            window.add_message(
                 ("<User> " if type == "t" 
                  else 
                  "<Server> " if type == "s" 
@@ -163,44 +163,5 @@ def send_message(type, text):
         else:
             text_to_add = text
 
-        window_interaction.add_message("<You> " + text_to_add)  # Display message in UI
+        window.add_message("<You> " + text_to_add)  # Display message in UI
         last_own_sent_message = text                            # Store last sent message to avoid duplication
-
-# ==========================================================
-#               SERVER COMMAND HANDLING
-# ==========================================================
-
-def server_command_task(text_array):
-    """
-    Processes "task" commands.
-
-    :param text_array: A list of command arguments (e.g., ['shift', 'encode', '2000']).
-    """
-    split_text = text_array
-    if split_text[0] == "task":
-        del split_text[0]   # Remove "task" if it's still present
-
-    # Determine if the command is an encode or decode task
-    type_code = split_text[1]
-
-    match type_code:        # Handle different cryptographic tasks
-        case "shift":
-            pass            # Placeholder for shift cipher implementation
-        case "vigenere":
-            pass            # Placeholder for Vigenère cipher implementation
-        case "RSA":
-            pass            # Placeholder for RSA encryption implementation
-        case _:
-            pass            # Catch-all case for unknown commands
-
-def server_command_hash(text_array):
-    """
-    Processes "hash" commands.
-
-    :param text_array: A list of command arguments (e.g., ['verify', 'hash']).
-    """
-    match text_array[0]:    # Check the first argument of the command
-        case "verify":
-            pass            # Placeholder for hash verification implementation
-        case "hash":
-            pass            # Placeholder for hash generation implementation

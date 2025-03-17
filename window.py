@@ -65,7 +65,6 @@ class MainWindow(QMainWindow):
         btn_shift_de = QPushButton("Shift decode")
         btn_shift_de.setFixedSize(150, 30)
         command_layout.addWidget(btn_shift_de)
-        btn_shift_en.clicked.connect()
         
         btn_vigenere_en = QPushButton("Vigenere encode")
         btn_vigenere_en.setFixedSize(150, 30)
@@ -151,6 +150,7 @@ class MainWindow(QMainWindow):
         """
         Sends the user input message to the server when 'Enter' is pressed.
         """
+        
         type = server_interaction.mode
 
         if re.search("task (shift|vigenere|RSA) (encode|decode) ([1-9][0-9]{0,3}|10000)", self.message_input.text()) != None:
@@ -179,6 +179,15 @@ class MainWindow(QMainWindow):
             server_interaction.send_message(type, self.message_input.text())
 
         self.message_input.setText("")
+
+    def add_message(self, text):
+        """
+        Appends a new message to the text area and clears the input field.
+        :param text: The message to add to the chat history.
+        """
+        
+        self.message_display.appendPlainText(text)     # Append the new message to the text area
+        return
 
 def load_window():
     app = QApplication(sys.argv)
