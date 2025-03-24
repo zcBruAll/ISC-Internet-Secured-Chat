@@ -3,12 +3,18 @@ import re
 import sys
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-    QLineEdit, QTextEdit, QPushButton, QStyle
+    QLineEdit, QTextEdit, QPushButton, QStyle, QSizePolicy, QLabel
 )
 from PySide6.QtGui import QIcon
 
 import crypto_interaction
 import server_interaction
+
+_window = None
+_max = 20
+
+def getWindow():
+    return _window
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -64,22 +70,30 @@ class MainWindow(QMainWindow):
         
         btn_shift_de = QPushButton("Shift decode")
         btn_shift_de.setFixedSize(150, 30)
+        btn_shift_de.clicked.connect(lambda: self.click_task("shift decode"))
+        btn_shift_de.setEnabled(False)
         command_layout.addWidget(btn_shift_de)
         
         btn_vigenere_en = QPushButton("Vigenere encode")
         btn_vigenere_en.setFixedSize(150, 30)
+        btn_vigenere_en.clicked.connect(lambda: self.click_task("vigenere encode"))
         command_layout.addWidget(btn_vigenere_en)
         
         btn_vigenere_de = QPushButton("Vigenere decode")
         btn_vigenere_de.setFixedSize(150, 30)
+        btn_vigenere_de.clicked.connect(lambda: self.click_task("vigenere decode"))
+        btn_vigenere_de.setEnabled(False)
         command_layout.addWidget(btn_vigenere_de)
         
         btn_rsa_en = QPushButton("RSA encode")
         btn_rsa_en.setFixedSize(150, 30)
+        btn_rsa_en.clicked.connect(lambda: self.click_task("RSA encode"))
         command_layout.addWidget(btn_rsa_en)
         
         btn_rsa_de = QPushButton("RSA decode")
         btn_rsa_de.setFixedSize(150, 30)
+        btn_rsa_de.clicked.connect(lambda: self.click_task("RSA decode"))
+        btn_rsa_de.setEnabled(False)
         command_layout.addWidget(btn_rsa_de)
 
         right_container_layout.addWidget(command_panel)
@@ -144,7 +158,8 @@ class MainWindow(QMainWindow):
         pass
 
     def click_task(self, command):
-        self.message_input.setText("task " + command.lower() + " " + random.randint(1, 1000))
+        global _max
+        self.message_input.setText("task " + command + " " + str(random.randint(1, _max)))
 
     def send_message(self):
         """
@@ -185,12 +200,13 @@ class MainWindow(QMainWindow):
         Appends a new message to the text area and clears the input field.
         :param text: The message to add to the chat history.
         """
-        
-        self.message_display.appendPlainText(text)     # Append the new message to the text area
+        newline = "\n"
+        self.message_display.insertPlainText(text + newline)     # Append the new message to the text area
         return
 
 def load_window():
     app = QApplication(sys.argv)
-    window = MainWindow()
-    window.show()
+    global _window
+    _window = MainWindow()
+    _window.show()
     sys.exit(app.exec())

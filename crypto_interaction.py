@@ -133,9 +133,9 @@ def crypto(command: list[str]):
             if isEncode:
                 result = encode_rsa(" ".join(command[2:-1]), command[-1])
 
-    window.add_message("<Crypto> " + " ".join(command))
+    window.getWindow().add_message("<Crypto> " + " ".join(command))
 
     text = ""
     text += bytes(b for b in result if b != 0).decode('utf-8', 'replace')
 
-    window.add_message("<Crypto> " + text)
+    window.getWindow().add_message("<Crypto> " + text)

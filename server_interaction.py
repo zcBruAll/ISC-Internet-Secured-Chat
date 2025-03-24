@@ -136,7 +136,7 @@ def handle_message_reception():
             if type == "t":
                 last_own_sent_message = ""                  # Reset last sent message tracking
             
-            window.add_message(
+            window.getWindow().add_message(
                 ("<User> " if type == "t" 
                  else 
                  "<Server> " if type == "s" 
@@ -163,5 +163,5 @@ def send_message(type, text):
         else:
             text_to_add = text
 
-        window.add_message("<You> " + text_to_add)  # Display message in UI
+        window.getWindow().add_message("<You> " + text_to_add)  # Display message in UI
         last_own_sent_message = text                            # Store last sent message to avoid duplication
