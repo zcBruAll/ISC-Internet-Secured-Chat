@@ -4,14 +4,13 @@ import threading                    # For handling concurrent tasks
 import window                       # Custom module to interact with the UI
 import crypto_interaction           # Custom module to interact with the crypto tools
 
+import threading
+
 # Server details
 HOST = 'vlbelintrocrypto.hevs.ch'   # Server hostname
 PORT = 6000                         # Server port
 
 mode = "t"
-
-# Initialize the socket for TCP communication
-connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 # Connection state:
 # -1: Not connected yet
@@ -73,6 +72,8 @@ def open_connection():
     global connection_state
     global connection
     try:
+        # Initialize the socket for TCP communication
+        connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # Attempt to connect to the server
         connection.connect((HOST, PORT))
     except (ConnectionRefusedError, socket.gaierror) as e:
@@ -123,9 +124,13 @@ def handle_message_reception():
 
             # Receive the message
             data = connection.recv(msgLength)
-        except ConnectionAbortedError:
-            print("[ServerInteraction] Connection aborted")
-            exit(1)                                         # If the connection is aborted, exit the thread
+        except ConnectionError:
+            close_connection()
+            s = threading.Thread(target=open_connection, daemon=True)
+            s.start()
+        except:
+            print("An error has occured")
+            exit(1)
 
         
         decoded_data = _decode_message(data)                # Decode received data

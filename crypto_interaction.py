@@ -153,8 +153,9 @@ def crypto(command: list[str]):
     """
 
     result = bytearray()
-    # Reitreve if the operation is to encode or decode
+    # Retrieve if the operation is to encode or decode
     isEncode = command[1] == "encode"
+    isVerifying = command[1] == "verify"
     match command[0]:
         case "shift":
             if isEncode:
@@ -171,6 +172,11 @@ def crypto(command: list[str]):
         case "RSA":
             if isEncode:
                 result = encode_rsa(" ".join(command[2:-1]), command[-1])
+        case "hash":
+            if isVerifying:
+                result = hash_verify(" ".join(command[2:-1]), command[-1])
+            else:
+                result = hash_hash(" ".join(command[2::]))
 
     window.getWindow().add_message("<Crypto> " + " ".join(command))
 
