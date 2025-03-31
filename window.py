@@ -6,12 +6,35 @@ from PySide6.QtWidgets import (
     QLineEdit, QTextEdit, QPushButton, QStyle, QSizePolicy, QLabel
 )
 from PySide6.QtGui import QIcon
+from PySide6.QtCore import Qt
 
 import crypto_interaction
 import server_interaction
 
 _window = None
 _max = 20
+
+class ToggleButton(QPushButton):
+    def __init__(self, text, toggle_mapping, parent=None):
+        """
+        toggle_mapping: dict mapping current mode to toggled mode, e.g.
+            {"encode": "decode", "decode": "encode"}
+        """
+        super().__init__(text, parent)
+        self.toggle_mapping = toggle_mapping
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.RightButton:
+            # Split the button text into label and mode (assumes format "Label mode")
+            parts = self.text().rsplit(' ', 1)
+            if len(parts) == 2:
+                label, mode = parts
+                # Toggle mode if available in mapping
+                toggled_mode = self.toggle_mapping.get(mode, mode)
+                self.setText(f"{label} {toggled_mode}")
+        else:
+            # For left click, call the standard behavior (which emits clicked signal)
+            super().mousePressEvent(event)
 
 def getWindow():
     return _window
@@ -62,39 +85,34 @@ class MainWindow(QMainWindow):
         command_panel = QWidget()
         command_panel.setFixedWidth(160)
         command_layout = QVBoxLayout(command_panel)
+
+        encode_toggle = {"encode": "decode", "decode": "encode"}
+        hash_toggle = {"hash": "verify", "verify": "hash"}
         
-        btn_shift_en = QPushButton("Shift encode")
-        btn_shift_en.setFixedSize(150, 30)
-        btn_shift_en.clicked.connect(lambda: self.click_task("shift encode"))
-        command_layout.addWidget(btn_shift_en)
+        btn_shift = ToggleButton("Shift encode", encode_toggle)
+        btn_shift.setFixedSize(150, 30)
+        btn_shift.clicked.connect(lambda: self.click_task(btn_shift.text().lower()))
+        command_layout.addWidget(btn_shift)
         
-        btn_shift_de = QPushButton("Shift decode")
-        btn_shift_de.setFixedSize(150, 30)
-        btn_shift_de.clicked.connect(lambda: self.click_task("shift decode"))
-        btn_shift_de.setEnabled(False)
-        command_layout.addWidget(btn_shift_de)
+        btn_vigenere = ToggleButton("Vigenere encode", encode_toggle)
+        btn_vigenere.setFixedSize(150, 30)
+        btn_vigenere.clicked.connect(lambda: self.click_task(btn_vigenere.text().lower()))
+        command_layout.addWidget(btn_vigenere)
         
-        btn_vigenere_en = QPushButton("Vigenere encode")
-        btn_vigenere_en.setFixedSize(150, 30)
-        btn_vigenere_en.clicked.connect(lambda: self.click_task("vigenere encode"))
-        command_layout.addWidget(btn_vigenere_en)
-        
-        btn_vigenere_de = QPushButton("Vigenere decode")
-        btn_vigenere_de.setFixedSize(150, 30)
-        btn_vigenere_de.clicked.connect(lambda: self.click_task("vigenere decode"))
-        btn_vigenere_de.setEnabled(False)
-        command_layout.addWidget(btn_vigenere_de)
-        
-        btn_rsa_en = QPushButton("RSA encode")
-        btn_rsa_en.setFixedSize(150, 30)
-        btn_rsa_en.clicked.connect(lambda: self.click_task("RSA encode"))
-        command_layout.addWidget(btn_rsa_en)
-        
-        btn_rsa_de = QPushButton("RSA decode")
-        btn_rsa_de.setFixedSize(150, 30)
-        btn_rsa_de.clicked.connect(lambda: self.click_task("RSA decode"))
-        btn_rsa_de.setEnabled(False)
-        command_layout.addWidget(btn_rsa_de)
+        btn_rsa = ToggleButton("RSA encode", encode_toggle)
+        btn_rsa.setFixedSize(150, 30)
+        btn_rsa.clicked.connect(lambda: self.click_task("RSA encode"))
+        command_layout.addWidget(btn_rsa)
+
+        btn_hash = ToggleButton("Hash hash", hash_toggle)
+        btn_hash.setFixedSize(150, 30)
+        btn_hash.clicked.connect(lambda: self.click_task(btn_hash.text().lower()))
+        command_layout.addWidget(btn_hash)
+
+        btn_dh = QPushButton("Diffie-Hellman encode")
+        btn_dh.setFixedSize(150, 30)
+        btn_dh.clicked.connect(lambda: self.click_task("DH encode"))
+        command_layout.addWidget(btn_dh)
 
         right_container_layout.addWidget(command_panel)
 
@@ -159,7 +177,8 @@ class MainWindow(QMainWindow):
 
     def click_task(self, command):
         global _max
-        self.message_input.setText("task " + command + " " + str(random.randint(1, _max)))
+        addon = "" if command.__contains__("hash") else str(random.randint(1, _max))
+        self.message_input.setText("task " + command + " " + addon)
 
     def send_message(self):
         """
@@ -168,7 +187,7 @@ class MainWindow(QMainWindow):
         
         type = server_interaction.mode
 
-        if re.search("task (shift|vigenere|RSA) (encode|decode) ([1-9][0-9]{0,3}|10000)", self.message_input.text()) != None:
+        if re.search("task ((shift|vigenere|RSA) (encode|decode) ([1-9][0-9]{0,3}|10000)|hash (hash|verify))", self.message_input.text()) != None:
             type = "s"
             if self.message_input.text().__contains__("shift"):
                 crypto_interaction.isShifting = True
@@ -182,6 +201,14 @@ class MainWindow(QMainWindow):
             
             if self.message_input.text().__contains__("encode"):
                 crypto_interaction.isEncoding = True
+                crypto_interaction.server_msg.clear()
+
+            if self.message_input.text().__contains__("hash"):
+                crypto_interaction.isHashing = True
+                crypto_interaction.server_msg.clear()
+
+            if self.message_input.text().__contains__("verify"):
+                crypto_interaction.isVerifying = True
                 crypto_interaction.server_msg.clear()
 
         if self.message_input.text().startswith("/s "):
