@@ -1,17 +1,16 @@
 # Import necessary modules
 import socket                       # For network communication
 import threading                    # For handling concurrent tasks
-import window_interaction           # Custom module to interact with the UI
+import window                       # Custom module to interact with the UI
 import crypto_interaction           # Custom module to interact with the crypto tools
+
+import threading
 
 # Server details
 HOST = 'vlbelintrocrypto.hevs.ch'   # Server hostname
 PORT = 6000                         # Server port
 
 mode = "t"
-
-# Initialize the socket for TCP communication
-connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 # Connection state:
 # -1: Not connected yet
@@ -73,6 +72,8 @@ def open_connection():
     global connection_state
     global connection
     try:
+        # Initialize the socket for TCP communication
+        connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # Attempt to connect to the server
         connection.connect((HOST, PORT))
     except (ConnectionRefusedError, socket.gaierror) as e:
@@ -123,9 +124,13 @@ def handle_message_reception():
 
             # Receive the message
             data = connection.recv(msgLength)
-        except ConnectionAbortedError:
-            print("[ServerInteraction] Connection aborted")
-            exit(1)                                         # If the connection is aborted, exit the thread
+        except ConnectionError:
+            close_connection()
+            s = threading.Thread(target=open_connection, daemon=True)
+            s.start()
+        except:
+            print("An error has occured")
+            exit(1)
 
         
         decoded_data = _decode_message(data)                # Decode received data
@@ -136,7 +141,7 @@ def handle_message_reception():
             if type == "t":
                 last_own_sent_message = ""                  # Reset last sent message tracking
             
-            window_interaction.add_message(
+            window.getWindow().add_message(
                 ("<User> " if type == "t" 
                  else 
                  "<Server> " if type == "s" 
@@ -163,44 +168,5 @@ def send_message(type, text):
         else:
             text_to_add = text
 
-        window_interaction.add_message("<You> " + text_to_add)  # Display message in UI
+        window.getWindow().add_message("<You> " + text_to_add)  # Display message in UI
         last_own_sent_message = text                            # Store last sent message to avoid duplication
-
-# ==========================================================
-#               SERVER COMMAND HANDLING
-# ==========================================================
-
-def server_command_task(text_array):
-    """
-    Processes "task" commands.
-
-    :param text_array: A list of command arguments (e.g., ['shift', 'encode', '2000']).
-    """
-    split_text = text_array
-    if split_text[0] == "task":
-        del split_text[0]   # Remove "task" if it's still present
-
-    # Determine if the command is an encode or decode task
-    type_code = split_text[1]
-
-    match type_code:        # Handle different cryptographic tasks
-        case "shift":
-            pass            # Placeholder for shift cipher implementation
-        case "vigenere":
-            pass            # Placeholder for Vigenère cipher implementation
-        case "RSA":
-            pass            # Placeholder for RSA encryption implementation
-        case _:
-            pass            # Catch-all case for unknown commands
-
-def server_command_hash(text_array):
-    """
-    Processes "hash" commands.
-
-    :param text_array: A list of command arguments (e.g., ['verify', 'hash']).
-    """
-    match text_array[0]:    # Check the first argument of the command
-        case "verify":
-            pass            # Placeholder for hash verification implementation
-        case "hash":
-            pass            # Placeholder for hash generation implementation

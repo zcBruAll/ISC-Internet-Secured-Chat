@@ -1,11 +1,15 @@
-import window_interaction
+from hashlib import sha256
+
+import window
 import server_interaction
 
 isShifting = False
 isVigenering = False
 isRSAing = False
+isHashing = False
 
 isEncoding = False
+isVerifying = False
 
 server_msg = list[str]()
 
@@ -18,8 +22,10 @@ def appendServerMsg(msg: str):
     global isShifting
     global isVigenering
     global isRSAing
+    global isHashing
 
     global isEncoding
+    global isVerifying
 
     server_msg.append(msg)
 
@@ -45,6 +51,20 @@ def appendServerMsg(msg: str):
         isRSAing = False
         isEncoding = False
         server_msg.clear()
+
+    if isHashing == True and len(server_msg) == 2:
+        if (isVerifying == False):
+            server_interaction.send_message("s", hash_hash(server_msg[1]))
+            isHashing = False
+            server_msg.clear()
+
+    if isHashing == True and len(server_msg) == 3:
+        if (isVerifying):
+            server_interaction.send_message("s", hash_verify(server_msg[1], server_msg[2]))
+            isHashing = False
+            isVerifying = False
+            server_msg.clear()
+
 
 # Encode the message with shift
 def encode_shift(message, shift):
@@ -105,6 +125,25 @@ def encode_rsa(message, key_n, key_e):
 
     return result
 
+def hash_hash(message):
+    result = bytearray()
+
+    rslt = sha256(message.encode('utf-8')).hexdigest()
+    for c in rslt:
+        result.extend(int.to_bytes(int.from_bytes(c.encode()), 4))
+
+    return result
+
+def hash_verify(message, hash):
+    result = bytearray()
+
+    rslt = str(sha256(message.encode('utf-8')).hexdigest() == hash)
+
+    for c in rslt:
+        result.extend(int.to_bytes(int.from_bytes(c.encode()), 4))
+
+    return result
+
 # Execute the crypto commands
 def crypto(command: list[str]):
     """
@@ -114,8 +153,9 @@ def crypto(command: list[str]):
     """
 
     result = bytearray()
-    # Reitreve if the operation is to encode or decode
+    # Retrieve if the operation is to encode or decode
     isEncode = command[1] == "encode"
+    isVerifying = command[1] == "verify"
     match command[0]:
         case "shift":
             if isEncode:
@@ -132,10 +172,15 @@ def crypto(command: list[str]):
         case "RSA":
             if isEncode:
                 result = encode_rsa(" ".join(command[2:-1]), command[-1])
+        case "hash":
+            if isVerifying:
+                result = hash_verify(" ".join(command[2:-1]), command[-1])
+            else:
+                result = hash_hash(" ".join(command[2::]))
 
-    window_interaction.add_message("<Crypto> " + " ".join(command))
+    window.getWindow().add_message("<Crypto> " + " ".join(command))
 
     text = ""
     text += bytes(b for b in result if b != 0).decode('utf-8', 'replace')
 
-    window_interaction.add_message("<Crypto> " + text)
+    window.getWindow().add_message("<Crypto> " + text)
