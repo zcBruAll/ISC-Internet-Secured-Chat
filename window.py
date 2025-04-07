@@ -44,7 +44,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("ISC - Internet Secured Chat")
         self.setWindowIcon(QIcon("ISC-logo.png"))
-        self.setFixedSize(650, 300)
+        self.setFixedSize(1280, 720)
 
         # Main container with horizontal layout:
         # Left: Messages and input; Right: Command panel, image toggle, and image panel.
@@ -56,12 +56,13 @@ class MainWindow(QMainWindow):
         # Left Panel: Message Area
         # ---------------------
         message_panel = QWidget()
-        message_panel.setFixedWidth(450)
+        message_panel.setFixedWidth(1100)
         message_layout = QVBoxLayout(message_panel)
 
         self.message_display = QTextEdit()
         self.message_display.setReadOnly(True)
-        self.message_display.setPlaceholderText("Waiting for messages...")
+        #self.message_display.setPlaceholderText("Waiting for messages...")
+        self.message_display.setAcceptRichText(True)
         message_layout.addWidget(self.message_display)
 
         # Input area for messages/commands
@@ -111,7 +112,7 @@ class MainWindow(QMainWindow):
 
         btn_dh = QPushButton("Diffie-Hellman encode")
         btn_dh.setFixedSize(150, 30)
-        btn_dh.clicked.connect(lambda: self.click_task("DH encode"))
+        btn_dh.clicked.connect(lambda: self.click_task("DifHel"))
         command_layout.addWidget(btn_dh)
 
         right_container_layout.addWidget(command_panel)
@@ -177,7 +178,7 @@ class MainWindow(QMainWindow):
 
     def click_task(self, command):
         global _max
-        addon = "" if command.__contains__("hash") else str(random.randint(1, _max))
+        addon = "" if command.__contains__("hash") or command.__contains__("DifHel") else str(random.randint(1, _max))
         self.message_input.setText("task " + command + " " + addon)
 
     def send_message(self):
@@ -187,7 +188,7 @@ class MainWindow(QMainWindow):
         
         type = server_interaction.mode
 
-        if re.search("task ((shift|vigenere|RSA) (encode|decode) ([1-9][0-9]{0,3}|10000)|hash (hash|verify))", self.message_input.text()) != None:
+        if re.search("task ((shift|vigenere|RSA) (encode|decode) ([1-9][0-9]{0,3}|10000)|hash (hash|verify)|DifHel)", self.message_input.text()) != None:
             type = "s"
             if self.message_input.text().__contains__("shift"):
                 crypto_interaction.isShifting = True
@@ -211,6 +212,11 @@ class MainWindow(QMainWindow):
                 crypto_interaction.isVerifying = True
                 crypto_interaction.server_msg.clear()
 
+            if self.message_input.text().__contains__("DifHel"):
+                crypto_interaction.difHelStep = 1
+                crypto_interaction.isDifHeling = True
+                crypto_interaction.server_msg.clear()
+
         if self.message_input.text().startswith("/s "):
             type = "s"
             self.message_input.setText(self.message_input.text()[3:])
@@ -228,7 +234,16 @@ class MainWindow(QMainWindow):
         :param text: The message to add to the chat history.
         """
         newline = "\n"
+
         self.message_display.insertPlainText(text + newline)     # Append the new message to the text area
+
+        return
+    
+    def add_own_message(self, text):
+        self.message_display.insertHtml("")
+    
+    def add_image(self, img):
+        self.message_display.insertHtml(img)
         return
 
 def load_window():

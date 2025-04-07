@@ -1,4 +1,7 @@
 from hashlib import sha256
+import random
+from cryptography.hazmat.primitives.asymmetric import dh
+from sympy import primerange, primitive_root
 
 import window
 import server_interaction
@@ -7,9 +10,14 @@ isShifting = False
 isVigenering = False
 isRSAing = False
 isHashing = False
+isDifHeling = False
 
 isEncoding = False
 isVerifying = False
+
+difHelStep = 0
+
+dh_space = [0, 0, 0]
 
 server_msg = list[str]()
 
@@ -23,9 +31,11 @@ def appendServerMsg(msg: str):
     global isVigenering
     global isRSAing
     global isHashing
+    global isDifHeling
 
     global isEncoding
     global isVerifying
+    global difHelStep
 
     server_msg.append(msg)
 
@@ -64,6 +74,21 @@ def appendServerMsg(msg: str):
             isHashing = False
             isVerifying = False
             server_msg.clear()
+
+    if isDifHeling == True and difHelStep == 1 and len(server_msg) == 1:
+        server_interaction.send_message("s", difhel(difHelStep))
+        difHelStep += 1
+        server_msg.clear()
+        
+    if isDifHeling == True and difHelStep == 2 and len(server_msg) == 2:
+        server_interaction.send_message("s", difhel(difHelStep, server_msg[1]))
+        difHelStep += 1
+        server_msg.clear()
+
+    if isDifHeling == True and difHelStep == 3 and len(server_msg) == 1:
+        server_interaction.send_message("s", difhel(difHelStep))
+        difHelStep = 0
+        server_msg.clear()
 
 
 # Encode the message with shift
@@ -143,6 +168,22 @@ def hash_verify(message, hash):
         result.extend(int.to_bytes(int.from_bytes(c.encode()), 4))
 
     return result
+
+def difhel(step, halk_key=""):
+    global dh_space
+    match step:
+        case 1:
+            p = random.choice(list(primerange(3, 5000)))
+            prim = primitive_root(int(p), False)
+            dh_space = [p, prim, 0]
+            return str(p) + "," + str(prim)
+        case 2:
+            b = random.choice(range(2, 50))
+            s = pow(int(halk_key), b, dh_space[0])
+            dh_space[2] = s
+            return str(pow(dh_space[1], b, dh_space[0]))
+        case 3:
+            return str(dh_space[2])
 
 # Execute the crypto commands
 def crypto(command: list[str]):

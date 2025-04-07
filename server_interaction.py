@@ -12,6 +12,9 @@ PORT = 6000                         # Server port
 
 mode = "t"
 
+width = 0
+length = 0
+
 # Connection state:
 # -1: Not connected yet
 #  0: Connection failed
@@ -119,11 +122,25 @@ def handle_message_reception():
             # Receive the type of the message
             type = connection.recv(1).decode("utf-8", errors="ignore")
 
+            global width
+            global length
+
             # Receive the length of the message
-            msgLength = int.from_bytes(connection.recv(2), byteorder='big') * 4
+            if type == "i":
+                width = connection.recv(1).decode("utf-8", errors="ignore")
+                length = connection.recv(1).decode("utf-8", errors="ignore")
+                img = bytearray()
+                datalength = width * length * 3
+                while (len(img) < datalength): 
+                    img.extend(connection.recv(3))
+            else:
+                msgLength = int.from_bytes(connection.recv(2), byteorder='big') * 4
 
             # Receive the message
             data = connection.recv(msgLength)
+
+            if type == "i":
+                print(data)
         except ConnectionError:
             close_connection()
             s = threading.Thread(target=open_connection, daemon=True)
@@ -132,8 +149,15 @@ def handle_message_reception():
             print("An error has occured")
             exit(1)
 
-        
-        decoded_data = _decode_message(data)                # Decode received data
+        decoded_data = ""
+        # if type == "i":
+        #     print(data)
+        #     w = data[0:4]
+        #     h = data[4:8]
+        #     rgb = data[8::]
+        #     print(w, h, rgb)
+        # else:
+        decoded_data = _decode_message(data)            # Decode received data
 
         global last_own_sent_message
         # If the message is not empty and is not the last message we sent
@@ -141,13 +165,16 @@ def handle_message_reception():
             if type == "t":
                 last_own_sent_message = ""                  # Reset last sent message tracking
             
+            # if type == "i":
+            #    window.getWindow().add_image("<img src=\"\" alt=\"received image\"></img>")
+            # else:
             window.getWindow().add_message(
                 ("<User> " if type == "t" 
-                 else 
-                 "<Server> " if type == "s" 
-                 else 
-                 "<Other> ") 
-                 + _decode_message(data))   # Display message in the UI
+                else 
+                "<Server> " if type == "s" 
+                else
+                "<Other> ") 
+                + _decode_message(data))   # Display message in the UI
         
         if type == "s":
             crypto_interaction.appendServerMsg(decoded_data)
