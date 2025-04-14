@@ -169,7 +169,7 @@ def hash_verify(message, hash):
 
     return result
 
-def difhel(step, halk_key=""):
+def difhel(step, half_key=""):
     global dh_space
     match step:
         case 1:
@@ -179,7 +179,7 @@ def difhel(step, halk_key=""):
             return str(p) + "," + str(prim)
         case 2:
             b = random.choice(range(2, 50))
-            s = pow(int(halk_key), b, dh_space[0])
+            s = pow(int(half_key), b, dh_space[0])
             dh_space[2] = s
             return str(pow(dh_space[1], b, dh_space[0]))
         case 3:

@@ -228,22 +228,22 @@ class MainWindow(QMainWindow):
 
         self.message_input.setText("")
 
-    def add_message(self, text):
+    def add_message(self, who, text):
         """
         Appends a new message to the text area and clears the input field.
         :param text: The message to add to the chat history.
         """
-        newline = "\n"
-
-        self.message_display.insertPlainText(text + newline)     # Append the new message to the text area
-
+        self.add_title(who)
+        self.message_display.append("<p style=\"margin:0px;\">" + text + "</p>")     # Append the new message to the text area
         return
     
-    def add_own_message(self, text):
-        self.message_display.insertHtml("")
+    def add_title(self, who):
+        self.message_display.append("<p style=\"margin:0px;font-weight:bold;font-style: italic;\">" + who + "</p>")     # Append the new message to the text area
+        return
     
-    def add_image(self, img):
-        self.message_display.insertHtml(img)
+    def add_image(self, incr):
+        self.add_title("[Image]")
+        self.message_display.append("<img src=\"imgs/img" + str(incr) + ".png\" alt=\"Image\" style=\"margin:0px;margin-bottom:10px;\"></img>")
         return
 
 def load_window():

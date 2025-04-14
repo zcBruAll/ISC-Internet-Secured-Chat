@@ -6,6 +6,9 @@ import crypto_interaction           # Custom module to interact with the crypto 
 
 import threading
 
+from PIL import Image
+import numpy as np
+
 # Server details
 HOST = 'vlbelintrocrypto.hevs.ch'   # Server hostname
 PORT = 6000                         # Server port
@@ -14,6 +17,8 @@ mode = "t"
 
 width = 0
 length = 0
+
+incr = 0
 
 # Connection state:
 # -1: Not connected yet
@@ -122,62 +127,63 @@ def handle_message_reception():
             # Receive the type of the message
             type = connection.recv(1).decode("utf-8", errors="ignore")
 
+            data = bytearray()
+
             global width
             global length
+            global incr
 
             # Receive the length of the message
             if type == "i":
-                width = connection.recv(1).decode("utf-8", errors="ignore")
-                length = connection.recv(1).decode("utf-8", errors="ignore")
+                width = int.from_bytes(connection.recv(1))
+                height = int.from_bytes(connection.recv(1))
                 img = bytearray()
-                datalength = width * length * 3
+                datalength = width * height * 3
                 while (len(img) < datalength): 
                     img.extend(connection.recv(3))
+
+                array = np.array(img, dtype=np.uint8)
+
+                while (len(array) % 3 != 0):
+                    array = array[:-1]
+                
+                array = array.reshape((height, width, 3))
+
+                img = Image.fromarray(array, 'RGB')
+
+                img.save("imgs/img" + str(incr) + ".png")
+                window.getWindow().add_image(incr)
+                incr += 1
             else:
                 msgLength = int.from_bytes(connection.recv(2), byteorder='big') * 4
 
-            # Receive the message
-            data = connection.recv(msgLength)
-
-            if type == "i":
-                print(data)
+                # Receive the message
+                data = connection.recv(msgLength)
         except ConnectionError:
             close_connection()
             s = threading.Thread(target=open_connection, daemon=True)
             s.start()
-        except:
-            print("An error has occured")
-            exit(1)
 
-        decoded_data = ""
-        # if type == "i":
-        #     print(data)
-        #     w = data[0:4]
-        #     h = data[4:8]
-        #     rgb = data[8::]
-        #     print(w, h, rgb)
-        # else:
-        decoded_data = _decode_message(data)            # Decode received data
+        if (type != "i"):
+            decoded_data = ""
+            decoded_data = _decode_message(data)            # Decode received data
 
-        global last_own_sent_message
-        # If the message is not empty and is not the last message we sent
-        if len(decoded_data) != 0  and decoded_data != last_own_sent_message:
-            if type == "t":
-                last_own_sent_message = ""                  # Reset last sent message tracking
+            global last_own_sent_message
+            # If the message is not empty and is not the last message we sent
+            if len(decoded_data) != 0  and decoded_data != last_own_sent_message:
+                if type == "t":
+                    last_own_sent_message = ""                  # Reset last sent message tracking
+                
+                window.getWindow().add_message(
+                    ("[User] " if type == "t" 
+                    else 
+                    "[Server] " if type == "s" 
+                    else
+                    "[Other] ")
+                    , _decode_message(data))   # Display message in the UI
             
-            # if type == "i":
-            #    window.getWindow().add_image("<img src=\"\" alt=\"received image\"></img>")
-            # else:
-            window.getWindow().add_message(
-                ("<User> " if type == "t" 
-                else 
-                "<Server> " if type == "s" 
-                else
-                "<Other> ") 
-                + _decode_message(data))   # Display message in the UI
-        
-        if type == "s":
-            crypto_interaction.appendServerMsg(decoded_data)
+            if type == "s":
+                crypto_interaction.appendServerMsg(decoded_data)
 
 def send_message(type, text):
     """
@@ -195,5 +201,5 @@ def send_message(type, text):
         else:
             text_to_add = text
 
-        window.getWindow().add_message("<You> " + text_to_add)  # Display message in UI
+        window.getWindow().add_message("[You] ", text_to_add)  # Display message in UI
         last_own_sent_message = text                            # Store last sent message to avoid duplication
