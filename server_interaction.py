@@ -6,6 +6,8 @@ import crypto_interaction           # Custom module to interact with the crypto 
 
 import threading
 
+from communicator import comm
+
 from PIL import Image
 import numpy as np
 
@@ -152,7 +154,7 @@ def handle_message_reception():
                 img = Image.fromarray(array, 'RGB')
 
                 img.save("imgs/img" + str(incr) + ".png")
-                window.getWindow().add_image(incr)
+                comm.chat_img.emit(incr)
                 incr += 1
             else:
                 msgLength = int.from_bytes(connection.recv(2), byteorder='big') * 4
@@ -174,7 +176,7 @@ def handle_message_reception():
                 if type == "t":
                     last_own_sent_message = ""                  # Reset last sent message tracking
                 
-                window.getWindow().add_message(
+                comm.chat_msg.emit(
                     ("[User] " if type == "t" 
                     else 
                     "[Server] " if type == "s" 
@@ -201,5 +203,5 @@ def send_message(type, text):
         else:
             text_to_add = text
 
-        window.getWindow().add_message("[You] ", text_to_add)  # Display message in UI
+        comm.chat_msg.emit("[You] ", text_to_add)               # Display message in UI
         last_own_sent_message = text                            # Store last sent message to avoid duplication

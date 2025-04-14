@@ -10,6 +10,7 @@ from PySide6.QtCore import Qt
 
 import crypto_interaction
 import server_interaction
+from communicator import comm
 
 _window = None
 _max = 20
@@ -117,41 +118,8 @@ class MainWindow(QMainWindow):
 
         right_container_layout.addWidget(command_panel)
 
-        """
-        # Image Toggle Button
-        self.image_panel_visible = False
-        self.image_toggle_button = QPushButton()
-        self.image_toggle_button.setFixedSize(30, 100)
-        self.image_toggle_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
-        self.update_image_toggle_button_icon()
-        self.image_toggle_button.clicked.connect(self.toggle_image_panel)
-        right_container_layout.addWidget(self.image_toggle_button)
-
-        # Image Panel
-        self.image_panel = QWidget()
-        image_panel_layout = QVBoxLayout(self.image_panel)
-        self.image_panel.setVisible(self.image_panel_visible)
-
-        # Image label on top
-        self.image_label = QLabel("Image will be displayed here")
-        self.image_label.setFixedSize(300, 225)
-        self.image_label.setStyleSheet("border: 1px solid black;")
-        self.image_label.setScaledContents(True)
-        image_panel_layout.addWidget(self.image_label)
-
-        # Carousel buttons under the image box in a horizontal layout
-        carousel_buttons_layout = QHBoxLayout()
-        self.prev_image_button = QPushButton("<")
-        self.prev_image_button.clicked.connect(self.prev_image)
-        carousel_buttons_layout.addWidget(self.prev_image_button)
-
-        self.next_image_button = QPushButton(">")
-        self.next_image_button.clicked.connect(self.next_image)
-        carousel_buttons_layout.addWidget(self.next_image_button)
-        image_panel_layout.addLayout(carousel_buttons_layout)
-
-        right_container_layout.addWidget(self.image_panel)
-        """
+        comm.chat_msg.connect(self.add_message)
+        comm.chat_img.connect(self.add_image)
 
         main_layout.addWidget(message_panel)
         main_layout.addWidget(right_container)
